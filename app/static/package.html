@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>受控资料链接 · 企业知识库</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+         margin: 0; background: #f5f6f8; color: #111827; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 28px 16px 60px; }
+  .brand { font-size: 13px; color: #6b7280; margin-bottom: 14px; }
+  .brand b { color: #1677ff; }
+  .card { background: #fff; border-radius: 12px; padding: 22px 24px;
+          box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+  h1 { font-size: 18px; margin: 0 0 6px; }
+  .meta { font-size: 12px; color: #9ca3af; }
+  .badge { display: inline-block; border-radius: 4px; padding: 1px 8px; font-size: 12px; }
+  .statebox { text-align: center; padding: 46px 20px; }
+  .statebox .icon { font-size: 40px; margin-bottom: 12px; }
+  .statebox h2 { font-size: 16px; margin: 0 0 8px; }
+  .statebox p { font-size: 13px; color: #6b7280; margin: 4px 0; line-height: 1.7; }
+  .btn { display: inline-block; padding: 9px 22px; background: #1677ff; color: #fff;
+         border: none; border-radius: 8px; font-size: 14px; cursor: pointer;
+         text-decoration: none; }
+  .btn.ghost { background: #f3f4f6; color: #374151; }
+  .deptlist { margin: 10px 0; }
+  .deptlist li { font-size: 13px; color: #b45309; margin: 4px 0; }
+  .doc-row { display: flex; align-items: center; gap: 10px; padding: 12px 4px;
+             border-bottom: 1px solid #f3f4f6; }
+  .doc-row:last-child { border-bottom: none; }
+  .doc-name { flex: 1; font-size: 14px; word-break: break-all; }
+  .lv { border-radius: 4px; padding: 0 6px; font-size: 11px; }
+  .lv-L1 { color: #6b7280; background: #f3f4f6; }
+  .lv-L2 { color: #1677ff; background: #eff6ff; }
+  .lv-L3 { color: #b45309; background: #fef3c7; }
+  .open-btn { padding: 6px 14px; font-size: 13px; }
+  #viewer { display: none; position: fixed; inset: 0; background: rgba(15,18,25,.55);
+            z-index: 50; align-items: center; justify-content: center; }
+  #viewer .panel { background: #fff; border-radius: 12px; width: min(880px, 96vw);
+                   height: 88vh; display: flex; flex-direction: column; overflow: hidden; }
+  #viewer .vhead { display: flex; align-items: center; gap: 10px; padding: 14px 18px;
+                   border-bottom: 1px solid #eef0f3; }
+  #viewer .vtitle { font-size: 15px; font-weight: 600; flex: 1; word-break: break-all; }
+  #viewer .vmeta { font-size: 12px; color: #9ca3af; flex-shrink: 0; }
+  #viewer .vclose { background: none; border: none; font-size: 16px; cursor: pointer;
+                    color: #6b7280; }
+  #viewer .stage { position: relative; flex: 1; min-height: 0; }
+  #viewer .scroll { position: absolute; inset: 0; overflow-y: auto; padding: 20px 26px;
+                    line-height: 1.8; font-size: 14px; }
+  #viewer .scroll p { margin: 0 0 14px; white-space: pre-wrap; }
+  #viewer .wm { position: absolute; inset: 0; pointer-events: none; }
+  footer { text-align: center; font-size: 11px; color: #9ca3af; margin-top: 26px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">企业知识库 · <b>受控资料链接</b></div>
+  <div class="card" id="mainCard">
+    <div class="statebox" id="bootBox">
+      <div class="icon">⏳</div>
+      <h2>正在验证登录状态…</h2>
+    </div>
+  </div>
+  <footer>链接内容仅限发起人本人查看 · 每次打开均记录审计 · 知识库 V2</footer>
+</div>
+
+<div id="viewer">
+  <div class="panel">
+    <div class="vhead">
+      <span class="vtitle" id="vTitle">原文</span>
+      <span class="vmeta" id="vMeta"></span>
+      <button class="vclose" id="vClose">关闭 ✕</button>
+    </div>
+    <div class="stage">
+      <div class="scroll" id="vScroll"></div>
+      <div class="wm" id="vWm"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var TOKEN_KEY = '***';
+  var API_BASE = '';
+
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function getToken() {
+    // 回调页写 localStorage 后跳回本页会带 ?token=
+    var m = location.search.match(/[?&]token=([^&]+)/);
+    if (m) {
+      try { localStorage.setItem(TOKEN_KEY, m[1]); } catch (e) {}
+      history.replaceState(null, '', location.pathname); // 洗掉地址栏 token
+    }
+    try { return localStorage.getItem(TOKEN_KEY) || ''; } catch (e) { return m ? m[1] : ''; }
+  }
+
+  var box = document.getElementById('bootBox');
+
+  function renderState(html) {
+    box.innerHTML = html;
+  }
+
+  // ---------- 登录门 ----------
+  function needLogin(msg) {
+    renderState(
+      '<div class="icon">🔐</div>' +
+      '<h2>需要钉钉登录</h2>' +
+      '<p>' + esc(msg || '该链接受知识库权限保护，请先用钉钉扫码验证身份。') + '</p>' +
+      '<p style="margin-top:14px;"><button class="btn" id="loginBtn">钉钉扫码登录</button></p>'
+    );
+    document.getElementById('loginBtn').onclick = function () {
+      fetch(API_BASE + '/api/auth/login-url?base=' + encodeURIComponent(location.origin) +
+            '&next=' + encodeURIComponent(location.pathname))
+        .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(function (d) { location.href = d.login_url; })
+        .catch(function (e) { alert('无法获取登录链接: ' + e.message); });
+    };
+  }
+
+  function api(path) {
+    var sep = path.indexOf('?') >= 0 ? '&' : '?';
+    return fetch(API_BASE + path + sep + 'token=' + encodeURIComponent(getToken()))
+      .then(function (r) {
+        return r.text().then(function (t) {
+          var data = null;
+          try { data = t ? JSON.parse(t) : null; } catch (e) { data = t; }
+          if (r.status === 401) { var err = new Error('unauthorized'); err.status = 401; throw err; }
+          if (!r.ok) {
+            var d = (data && data.detail) ? data.detail : (typeof data === 'string' ? data : r.statusText);
+            var e2 = new Error(typeof d === 'string' ? d : JSON.stringify(d)); e2.status = r.status; throw e2;
+          }
+          return data;
+        });
+      });
+  }
+
+  // ---------- 水印 ----------
+  function drawWatermark(layer, text) {
+    layer.innerHTML = '';
+    layer.style.backgroundImage = 'none';
+    if (!text) return;
+    try {
+      var c = document.createElement('canvas');
+      c.width = 420; c.height = 300;
+      var ctx = c.getContext('2d');
+      ctx.font = '16px sans-serif';
+      ctx.fillStyle = 'rgba(120,128,140,0.20)';
+      ctx.translate(210, 150); ctx.rotate(-Math.PI / 7);
+      ctx.fillText(text, -160, 0);
+      ctx.fillText(text, -60, 80);
+      layer.style.backgroundImage = 'url(' + c.toDataURL() + ')';
+    } catch (e) {
+      var html = '';
+      for (var i = 0; i < 40; i++) {
+        html += '<span style="position:absolute;left:' + ((i * 7) % 90) + '%;top:' + ((i * 13) % 95) +
+          '%;transform:rotate(-30deg);white-space:nowrap;color:rgba(120,128,140,0.22);font-size:15px;">' +
+          esc(text) + '</span>';
+      }
+      layer.innerHTML = html;
+    }
+  }
+
+  // ---------- 文档查看浮层 ----------
+  var viewer = document.getElementById('viewer');
+  document.getElementById('vClose').onclick = function () { viewer.style.display = 'none'; };
+  viewer.addEventListener('click', function (e) { if (e.target === viewer) viewer.style.display = 'none'; });
+
+  function openDoc(docId, docName) {
+    var scroll = document.getElementById('vScroll');
+    document.getElementById('vTitle').textContent = '📄 ' + docName;
+    document.getElementById('vMeta').textContent = '';
+    document.getElementById('vWm').innerHTML = '';
+    document.getElementById('vWm').style.backgroundImage = 'none';
+    scroll.innerHTML = '<p style="color:#9ca3af;">加载中…</p>';
+    viewer.style.display = 'flex';
+    var token = getToken();
+    var sep = '?token=' + encodeURIComponent(token);
+    fetch(API_BASE + '/api/package/open/' + encodeURIComponent(PKG_TOKEN) + '/doc/' + encodeURIComponent(docId) + sep)
+      .then(function (r) {
+        return r.json().then(function (d) {
+          if (!r.ok) throw new Error((d && d.detail) || ('HTTP ' + r.status));
+          return d;
+        });
+      })
+      .then(function (d) {
+        var secs = d.text_sections || [];
+        scroll.innerHTML = secs.length
+          ? secs.map(function (s) { return '<p>' + esc(s) + '</p>'; }).join('')
+          : '<p style="color:#9ca3af;">(文档没有可显示的文本)</p>';
+        var wm = d.watermark || {};
+        document.getElementById('vMeta').textContent =
+          '共 ' + secs.length + ' 段 · 查看人 ' + (wm.actor || '') + (wm.time ? ' · ' + wm.time : '');
+        if (wm.actor) drawWatermark(document.getElementById('vWm'), wm.actor + ' ' + (wm.time || '').slice(0, 16));
+      })
+      .catch(function (e) {
+        scroll.innerHTML = '<p style="color:#dc2626;">' + esc(e.message || '加载失败') + '</p>';
+      });
+  }
+
+  // ---------- 已登录: 拉包状态 ----------
+  function renderOpen(data) {
+    var st = data.status;
+    if (st === 'pending_approval') {
+      var deps = (data.pending_depts || []).map(function (d) { return '<li>' + esc(d) + '</li>'; }).join('');
+      renderState(
+        '<div class="icon">⏳</div>' +
+        '<h2>《' + esc(data.title) + '》正在审批中</h2>' +
+        (deps ? '<ul class="deptlist">' + deps + '</ul>' : '') +
+        '<p>各部门负责人全部通过后链接自动生效，届时会收到钉钉通知。<br>可稍后回到本页刷新查看。</p>' +
+        '<p style="margin-top:14px;"><button class="btn ghost" onclick="location.reload()">刷新状态</button></p>'
+      );
+      return;
+    }
+    if (st === 'rejected') {
+      renderState('<div class="icon">🚫</div><h2>该打包申请已被驳回</h2><p>请联系驳回的部门负责人了解原因。</p>');
+      return;
+    }
+    if (st === 'cancelled') {
+      renderState('<div class="icon">🗑</div><h2>该打包已被发起人撤回</h2>');
+      return;
+    }
+    if (st === 'expired') {
+      renderState('<div class="icon">⌛</div><h2>链接已过期</h2><p>受控链接有效期 7 天，请重新发起打包。</p>');
+      return;
+    }
+    // approved → 文档清单
+    var rows = (data.docs || []).map(function (d) {
+      var name = (d.source || d.doc_id).replace(/^[0-9a-f]{8}_/, '');
+      return '<div class="doc-row">' +
+        '<span class="lv lv-' + esc(d.level) + '">' + esc(d.level) + '</span>' +
+        '<span class="doc-name">' + esc(name) + '</span>' +
+        '<button class="btn open-btn" data-did="' + esc(d.doc_id) + '" data-name="' + esc(name) + '">查看原文</button>' +
+        '</div>';
+    }).join('');
+    renderState(
+      '<div style="text-align:left;">' +
+      '<h1>📦 ' + esc(data.title) + '</h1>' +
+      '<div class="meta">' + (data.docs || []).length + ' 份文档 · 链接 ' + esc((data.expires_at || '').slice(0, 16)) +
+      ' 过期 · 查看人 ' + esc(data.watermark_actor || '') + '</div>' +
+      '<div style="margin-top:14px;">' + (rows || '<p class="meta">包内暂无文档</p>') + '</div>' +
+      '<p class="meta" style="margin-top:14px;">⚠️ 全部查看行为均记录审计并附加个人水印，请勿截图外传。</p>' +
+      '</div>'
+    );
+    Array.prototype.forEach.call(document.querySelectorAll('.open-btn'), function (b) {
+      b.onclick = function () { openDoc(b.dataset.did, b.dataset.name); };
+    });
+  }
+
+  var PKG_TOKEN = decodeURIComponent((location.pathname.match(/\/p\/([0-9a-f]{32})/) || [])[1] || '');
+
+  function boot() {
+    if (!PKG_TOKEN) {
+      renderState('<div class="icon">❌</div><h2>链接无效</h2>');
+      return;
+    }
+    var t = getToken();
+    if (!t) { needLogin(); return; }
+    api('/api/auth/me')
+      .then(function (me) {
+        if (me.gray_open === false && !me.admin && !me.boss) {
+          renderState('<div class="icon">🕓</div><h2>你的部门尚未开放</h2>' +
+            '<p>已通过钉钉验证（' + esc(me.name) + '），但组包功能尚未对部门灰度开放，敬请期待。</p>');
+          return;
+        }
+        return api('/api/package/open/' + encodeURIComponent(PKG_TOKEN)).then(renderOpen);
+      })
+      .catch(function (e) {
+        if (e.status === 401) {
+          try { localStorage.removeItem(TOKEN_KEY); } catch (x) {}
+          needLogin('登录已过期，请重新扫码。');
+        } else if (e.status === 403) {
+          renderState('<div class="icon">🔒</div><h2>无权查看该链接</h2>' +
+            '<p>' + esc(e.message || '受控链接仅发起人本人可打开。') + '</p>');
+        } else if (e.status === 410) {
+          renderState('<div class="icon">⌛</div><h2>链接已过期</h2><p>' + esc(e.message) + '</p>');
+        } else if (e.status === 404) {
+          renderState('<div class="icon">❌</div><h2>链接不存在</h2><p>请确认链接完整复制，或向发起人重新索取。</p>');
+        } else {
+          renderState('<div class="icon">⚠️</div><h2>加载失败</h2><p>' + esc(e.message || String(e)) + '</p>' +
+            '<p><button class="btn ghost" onclick="location.reload()">重试</button></p>');
+        }
+      });
+  }
+
+  boot();
+})();
+</script>
+</body>
+</html>

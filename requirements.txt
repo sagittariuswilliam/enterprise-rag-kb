@@ -1,0 +1,35 @@
+# ===== Web 框架 =====
+fastapi>=0.110.0
+uvicorn[standard]>=0.27.0
+python-multipart>=0.0.9
+
+# ===== 配置 / 校验 =====
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+
+# ===== 会话 JWT (扫码登录) =====
+PyJWT>=2.8.0
+
+# ===== 向量库 =====
+qdrant-client>=1.7.0
+
+# ===== 文档解析 =====
+pypdf>=4.0.0
+pypdfium2>=4.30.0
+python-docx>=1.1.0
+python-pptx>=1.0.0
+openpyxl>=3.1.0
+xlrd>=2.0.1
+pandas>=2.0.0
+Pillow>=10.0.0
+
+# ===== HTTP 客户端 (Embedding / Rerank / OCR / LLM 均走 OpenAI 兼容或官方 API) =====
+httpx>=0.27.0
+numpy>=1.24.0
+
+# ===== 钉钉 Stream 事件订阅 =====
+dingtalk-stream>=0.24
+
+# ===== 测试 =====
+pytest>=8.0.0
+pytest-asyncio>=0.23.0

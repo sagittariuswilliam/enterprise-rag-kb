@@ -1,0 +1,74 @@
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib60/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ===== 虚拟环境 =====
+.venv/
+venv/
+ENV/
+env/
+.python-version
+
+# ===== 环境变量（严禁提交真实 key） =====
+.env
+.env.local
+.env.*.local
+
+# ===== 测试 / 覆盖率 =====
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+
+# ===== 类型检查 / lint =====
+.mypy_cache/
+.dmypy.json
+.ruff_cache/
+
+# ===== IDE =====
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ===== 系统 =====
+.DS_Store
+Thumbs.db
+
+# ===== 项目数据 =====
+qdrant_data/
+app/data/*
+!app/data/.gitkeep
+logs/
+*.log
+*.db
+*.sqlite3
+
+# ===== 模型权重（本地路径，勿提交） =====
+models/
+*.bin
+*.safetensors
+*.onnx

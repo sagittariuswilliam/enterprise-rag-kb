@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>知识库管理控制台</title>
+<style>
+:root{
+  --bg:#f6f7f9; --card:#ffffff; --ink:#1a2233; --ink-500:#5c6675; --ink-300:#98a1af;
+  --line:#e5e8ee; --blue:#2563eb; --green:#16a34a; --red:#dc2626; --amber:#d97706;
+  --radius:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"PingFang SC","Microsoft YaHei",-apple-system,sans-serif;background:var(--bg);color:var(--ink);font-size:14px}
+a{color:var(--blue);text-decoration:none}
+header{background:var(--card);border-bottom:1px solid var(--line);padding:0 24px;height:56px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:10}
+header .logo{font-weight:700;font-size:16px}
+header .logo span{color:var(--blue)}
+nav{display:flex;gap:4px;margin-left:24px}
+nav button{border:none;background:none;padding:8px 14px;font-size:14px;color:var(--ink-500);cursor:pointer;border-radius:8px}
+nav button.on{background:#eef2ff;color:var(--blue);font-weight:600}
+#who{margin-left:auto;color:var(--ink-500);font-size:13px}
+#who b{color:var(--ink)}
+main{max-width:1200px;margin:24px auto;padding:0 24px}
+.grid{display:grid;gap:16px}
+.kpis{grid-template-columns:repeat(4,1fr)}
+.kpis5{grid-template-columns:repeat(5,1fr)}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px}
+.kpi .n{font-size:34px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
+.kpi .n small{font-size:15px;color:var(--ink-300);font-weight:400}
+.kpi .t{color:var(--ink-500);font-size:13px;margin-top:6px}
+.kpi .sub{color:var(--ink-300);font-size:12px;margin-top:4px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px}
+.card h3{font-size:15px;margin-bottom:14px;font-weight:600}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{color:var(--ink-500);text-align:left;font-weight:500;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid #f0f2f6;vertical-align:top}
+tbody tr{min-height:44px}
+tr:hover td{background:#fafbfd}
+.tag{display:inline-block;padding:1px 8px;border-radius:20px;font-size:12px;font-weight:600}
+.lv-L1{background:#f3f4f6;color:#6b7280}.lv-L2{background:#fef3c7;color:#92400e}
+.lv-L3{background:#dcfce7;color:#166534}.lv-L4{background:#fee2e2;color:#991b1b}
+.st-ok{color:var(--green)}.st-bad{color:var(--red)}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px}
+.dot.ok{background:var(--green)}.dot.bad{background:var(--red)}
+.bar{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+input[type=text],select{border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:13px;background:var(--card)}
+input[type=text]:focus{outline:2px solid #c7d7fe}
+.btn{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:7px 14px;font-size:13px;cursor:pointer;color:var(--ink)}
+.btn:hover{background:#f3f6fc}
+.muted{color:var(--ink-300);font-size:12px}
+.src{max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.empty{text-align:center;color:var(--ink-500);padding:28px}
+.err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:var(--radius);padding:20px;margin-bottom:16px}
+.tree ul{list-style:none;padding-left:22px;border-left:1px dashed var(--line);margin-left:6px}
+.tree li{padding:3px 0}
+.tree .dname{font-weight:500}
+.tree .cnt{color:var(--ink-300);font-size:12px;margin-left:8px}
+.tree .off{color:var(--ink-300);text-decoration:line-through}
+footer{color:var(--ink-300);text-align:center;padding:30px 0 20px;font-size:12px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:none;background:var(--card);padding:7px 12px;font-size:13px;cursor:pointer;color:var(--ink-500)}
+.seg button.on{background:#eef2ff;color:var(--blue);font-weight:600}
+.toast{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:8px;padding:8px 14px;margin-bottom:12px;font-size:13px}
+.pop{position:fixed;right:24px;bottom:24px;width:min(520px,92vw);max-height:62vh;overflow:auto;z-index:20;box-shadow:0 8px 30px rgba(0,0,0,.16);display:none}
+.pop h3{display:flex;align-items:center;gap:10px}
+.pop pre{white-space:pre-wrap;font-family:inherit;font-size:13px;color:var(--ink-500)}
+.kpis6{grid-template-columns:repeat(6,1fr)}
+.ibadge{display:inline-block;background:#fee2e2;color:#991b1b;border-radius:4px;padding:0 6px;font-size:11px;font-weight:600;margin:1px 4px 1px 0;white-space:nowrap}
+.st-pend{background:#ffedd5;color:#9a3412}.st-appr{background:#dcfce7;color:#166534}.st-rej{background:#f3f4f6;color:#6b7280}
+.pop textarea{width:100%;min-height:200px;border:1px solid var(--line);border-radius:8px;padding:10px;font:13px/1.6 inherit;color:var(--ink);resize:vertical;margin:10px 0}
+@media(max-width:900px){.kpis,.kpis5,.kpis6{grid-template-columns:repeat(2,1fr)}}
+
+/* P3 灰度开关 */
+.sw{position:relative;display:inline-block;width:40px;height:22px;cursor:pointer;vertical-align:middle}
+.sw input{opacity:0;width:0;height:0}
+.sw i{position:absolute;inset:0;background:#d5dae2;border-radius:22px;transition:.18s}
+.sw i::before{content:"";position:absolute;width:16px;height:16px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.18s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.sw input:checked + i{background:var(--green)}
+.sw input:checked + i::before{transform:translateX(18px)}
+.tg-wait{background:#fef3c7;color:#92400e}
+
+/* P5* 关系驾驶舱 */
+svg{display:block}
+.gl-child{fill:none;stroke:#c9d2e0;stroke-width:1.5}
+.gl-belong{stroke:#dbe3ee;stroke-width:1}
+.gl-leads{stroke:#d97706;stroke-width:1.6}
+.gd rect{fill:#eef2ff;stroke:#c7d2fe;stroke-width:1;cursor:pointer}
+.gd text{font-size:12px;fill:#3730a3;font-weight:600}
+.gd .gsub{font-size:10px;fill:#8a93a6;font-weight:400}
+.gd-root rect{fill:#2563eb;stroke:#1d4ed8}
+.gd-root text{fill:#fff}
+.gd-root .gsub{fill:#c7d7fe}
+.gd-off rect{fill:#f3f4f6;stroke:#d1d5db}
+.gd-off text{fill:#6b7280;text-decoration:line-through}
+.gu circle{fill:#fff;stroke:#98a1af;stroke-width:1.4;cursor:pointer}
+.gu text.gname{font-size:10px;fill:#5c6675}
+.gu:hover circle{stroke:#2563eb}
+.gu-leader circle{stroke:#d97706;stroke-width:2.2;fill:#fffbeb}
+.gsel circle{stroke:#2563eb;stroke-width:2.4}
+.gdot{display:inline-block;width:8px;height:8px;border-radius:50%;vertical-align:middle;margin:0 3px 0 0}
+.gdot-on{background:#16a34a}.gdot-off{background:#d1d5db}
+.gdotc-on{fill:#16a34a}.gdotc-off{fill:#d1d5db}
+.ts-on{fill:#16a34a}.ts-off{fill:#d97706}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">企业知识库 <span>管理控制台</span></div>
+  <nav id="nav">
+    <button data-tab="overview" class="on">概览</button>
+    <button data-tab="docs">文档管理</button>
+    <button data-tab="members">成员与部门</button>
+    <button data-tab="sync">钉钉同步</button>
+    <button data-tab="l4">L4 审批</button>
+    <button data-tab="review">校对队列</button>
+    <button data-tab="audit">审计日志</button>
+<button data-tab="hits">命中统计</button>
+    <button data-tab="report">审计报表</button>
+    <button data-tab="batch">批量导入</button>
+    <button data-tab="graph">关系驾驶舱</button>
+<button data-tab="pkg">打包审批</button>
+  </nav>
+  <div id="who"></div>
+</header>
+<main id="main"><div class="empty">加载中…</div></main>
+<div class="pop card" id="l4pop"></div>
+<div class="pop card" id="revpop" style="width:min(640px,94vw);max-height:78vh"></div>
+<footer>知识库 V2 · 管理端 v0.1 · 仅管理员可见 · <a href="/">返回问答</a></footer>
+<script>
+(function(){
+const TOKEN=localStorage.getItem('rag_token')||'';
+const H={'Authorization':'Bearer '+TOKEN};
+const LV={'L1':'仅自己','L2':'部门','L3':'公司','L4':'指定'};
+let tab='overview';
+
+function esc(s){const d=document.createElement('div');d.textContent=s??'';return d.innerHTML}
+function fmtTime(ts){if(!ts)return '—';if(typeof ts==='string')return ts.replace('T',' ').slice(0,19);return new Date(ts*1000).toLocaleString('zh-CN',{hour12:false})}
+function uid6(u){return u?u.slice(-6):'—'}
+async function api(p){
+  const r=await fetch('/api/'+p,{headers:H});
+  if(r.status===401)throw new Error('未登录或登录已过期，请先从 <a href="/?token=...">问答页</a> 完成钉钉扫码登录');
+  if(r.status===403)throw new Error('当前账号不是知识库管理员，无权访问管理端');
+  if(!r.ok)throw new Error('接口异常 '+r.status);
+  return r.json();
+}
+async function getApiRaw(p){
+  const r=await fetch('/api/'+p,{headers:H});
+  if(!r.ok){
+    let detail='';
+    try{const j=await r.json();detail=j.detail||j.note||''}catch(e){}
+    throw new Error((detail||('接口异常 '+r.status))+'（HTTP '+r.status+'）');
+  }
+  return r.json();
+}
+async function postApi(p,body){
+  const r=await fetch('/api/'+p,{method:'POST',headers:{...H,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});
+  if(!r.ok){
+    let detail='';
+    try{const j=await r.json();detail=j.detail||j.note||''}catch(e){}
+    throw new Error((detail||('接口异常 '+r.status))+'（HTTP '+r.status+'）');
+  }
+  return r.json();
+}
+function render(html){document.getElementById('main').innerHTML=html}
+function errbox(e){render('<div class="err">'+(e.message||e)+'</div>')}
+
+/* ---------- 概览 ---------- */
+async function viewOverview(){
+  let revPending=null;
+  const [o,rev]=await Promise.all([api('admin/overview'),getApiRaw('review/overview').catch(()=>null)]);
+  if(rev&&rev.pending!=null)revPending=rev.pending;
+  const svc=o.services.map(s=>`<div><span class="dot ${s.up?'ok':'bad'}"></span>${esc(s.name)} <span class="muted">${s.up?s.ms+'ms':'不可达'}</span></div>`).join('');
+  const ts=Object.entries(o.task_status||{}).map(([k,v])=>`${k==='ingested'?'已入库':k==='failed'?'失败':k==='queued'?'排队':k==='parsing'?'解析中':esc(k)} ${v}`).join(' · ');
+  const ls=o.last_sync;
+  const l4p=o.l4_pending||0;
+  render(`
+  <div class="grid kpis kpis6">
+    <div class="kpi"><div class="n" ${l4p>0?'style="color:var(--red)"':''}>${l4p}</div><div class="t">待审批 L4</div><div class="sub">${l4p>0?'<span class="st-bad">前往 L4 审批处理</span>':'队列为空'}</div></div>
+    <div class="kpi"><div class="n" ${(revPending||0)>0?'style="color:var(--red)"':''}>${revPending==null?'<small>—</small>':revPending}</div><div class="t">待校对</div><div class="sub">${revPending==null?'<span class="muted">无权限或不可用</span>':(revPending>0?'<span class="st-bad">前往校对队列处理</span>':'队列为空')}</div></div>
+    <div class="kpi"><div class="n">${o.documents}</div><div class="t">已入库文档</div><div class="sub">${(o.task_status&&o.task_status.failed)||0} 篇被门禁拦截</div></div>
+    <div class="kpi"><div class="n">${o.chunks??'<small>—</small>'}</div><div class="t">向量分块</div><div class="sub">Qdrant kb_chunks</div></div>
+    <div class="kpi"><div class="n">${o.users_active}<small> / ${o.depts} 部门</small></div><div class="t">在职成员</div><div class="sub">离职停用 ${o.users_left} 人</div></div>
+    <div class="kpi"><div class="n" style="font-size:17px;line-height:1.5">${ls?esc(ls.kind==='full_sync'?'全量同步':'事件更新'):'<span class="st-bad">无记录</span>'}</div><div class="t">最近一次钉钉同步</div><div class="sub">${ls?fmtTime(ls.created_at)+' · '+ls.detail:'—'}</div></div>
+  </div>
+  <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:16px">
+    <div class="card"><h3>服务存活</h3>${svc}</div>
+    <div class="card"><h3>上传任务台账</h3><div class="muted">${ts||'暂无任务'}<br>口径: 状态分布为累计台账, 非当日流量</div></div>
+  </div>`);
+}
+
+/* ---------- 文档管理 ---------- */
+let docCache=[],docFilter={level:'',status:'',q:''};
+async function viewDocs(){
+  const d=await api('admin/documents');
+  docCache=d.documents;
+  drawDocs();
+}
+const ST_CN={'queued':'排队中','parsing':'解析中','ingested':'已入库','failed':'失败','needs_review':'待校对','pending_approval':'待审批'};
+const FMT_CN={'direct_pdf':'PDF(文字版)','scanned_pdf':'PDF(扫描件)','image':'图片','docx':'Word','text':'文本','tabular':'表格','pptx':'PPT','unsupported':'不支持'};
+function drawDocs(){
+  let rows=docCache.filter(x=>(!docFilter.level||x.level===docFilter.level)&&(!docFilter.status||x.status===docFilter.status)&&(!docFilter.q||(x.source||'').toLowerCase().includes(docFilter.q.toLowerCase())));
+  const tr=rows.map(x=>{
+    const st=x.status==='ingested'?'<span class="st-ok">已入库</span>':x.status==='failed'?'<span class="st-bad">失败</span>':esc(ST_CN[x.status]||x.status||'—');
+    return `<tr><td class="src" title="${esc(x.source)}">${esc((x.source||'').replace(/^[0-9a-f]{8}_/,''))}</td>
+    <td><span class="tag lv-${esc(x.level)}">${esc(x.level||'—')}</span> <span class="muted">${esc(LV[x.level]||'')}</span></td>
+    <td>${(x.dept_id||[]).map(d=>'#'+d).join(' ')||'—'}</td>
+    <td>${uid6(x.owner_userid)}</td><td>${x.chunks??'—'}</td><td>${esc(FMT_CN[x.format]||x.format||'—')}</td>
+    <td title="${esc(x.reason)}">${st}</td><td class="muted">${fmtTime(x.created_at)}</td></tr>`}).join('');
+  render(`
+  <div class="card">
+    <div class="bar">
+      <input type="text" id="fq" placeholder="搜文件名…" value="${esc(docFilter.q)}">
+      <select id="flv"><option value="">全部密级</option>${['L1','L2','L3','L4'].map(l=>`<option ${docFilter.level===l?'selected':''}>${l}</option>`).join('')}</select>
+      <select id="fst"><option value="">全部状态</option><option value="ingested" ${docFilter.status==='ingested'?'selected':''}>已入库</option><option value="queued" ${docFilter.status==='queued'?'selected':''}>排队中</option><option value="parsing" ${docFilter.status==='parsing'?'selected':''}>解析中</option><option value="needs_review" ${docFilter.status==='needs_review'?'selected':''}>待校对</option><option value="failed" ${docFilter.status==='failed'?'selected':''}>失败</option></select>
+      <span class="muted">${rows.length} / ${docCache.length} 篇 · 本表为全量管理视野(不受你的 ACL 限制)</span>
+    </div>
+    <table><thead><tr><th>文档</th><th>密级</th><th>部门</th><th>上传者</th><th>块数</th><th>格式</th><th>状态</th><th>上传时间</th></tr></thead>
+    <tbody>${tr||'<tr><td colspan="8" class="empty">没有符合条件的文档</td></tr>'}</tbody></table>
+  </div>`);
+  document.getElementById('fq').oninput=e=>{docFilter.q=e.target.value;drawDocs()};
+  document.getElementById('flv').onchange=e=>{docFilter.level=e.target.value;drawDocs()};
+  document.getElementById('fst').onchange=e=>{docFilter.status=e.target.value;drawDocs()};
+}
+
+/* ---------- 成员与部门 ---------- */
+let memCache=null,memFilter={q:'',dept:0,showLeft:false};
+/* ---------- P3 灰度开放 (2026-10-19) ---------- */
+async function loadGrayCard(){
+  let g;
+  try{g=await getApiRaw('admin/gray')}catch(e){const el=document.getElementById('grayCard');if(el)el.innerHTML='<div class="empty">灰度状态加载失败: '+esc(e.message)+'</div>';return}
+  const rows=g.items.map(d=>`<tr><td><b>${esc(d.name)}</b>${d.is_root?' <span class="tag lv-L1">根部门</span>':''}</td>`
+    +`<td>${d.member_count}</td><td>${esc(d.leader_name||'—')}</td>`
+    +`<td>${d.open?`<span class="tag lv-L3">已开放</span>`:'<span class="tag tg-wait">待开放</span>'}</td>`
+    +`<td><label class="sw"><input type="checkbox" data-dept="${d.dept_id}" ${d.open?'checked':''}><i></i></label></td>`
+    +`<td class="muted">${d.opened_at?fmtTime(d.opened_at):'—'}</td></tr>`).join('');
+  const el=document.getElementById('grayCard');
+  if(!el)return;
+  el.innerHTML=`<h3>灰度开放</h3>
+    <div class="muted" style="margin-bottom:10px">开关即时生效：关闭的部门登录后仅见"即将开放"页，问答/上传被拦截（前后端双重）。管理员/老板不受影响。</div>
+    <table><thead><tr><th>部门</th><th>在职</th><th>负责人</th><th>状态</th><th>已开放</th><th>最近变更</th></tr></thead><tbody>${rows}</tbody></table>`;
+  el.querySelectorAll('input[data-dept]').forEach(inp=>inp.onchange=async e=>{
+    const dep=+e.target.dataset.dept, open=e.target.checked;
+    try{
+      await postApi('admin/gray/'+dep,{open:open});
+      toast(open?'已开放，即时生效':'已关闭，该部门员工将被引导到"即将开放"页');
+      loadGrayCard();
+    }catch(err){toast('设置失败: '+err.message);e.target.checked=!open}
+  });
+}
+function toast(msg){const t=document.createElement('div');t.textContent=msg;t.style.cssText='position:fixed;left:50%;bottom:32px;transform:translateX(-50%);background:#1a2233;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.2)';document.body.appendChild(t);setTimeout(()=>t.remove(),2600)}
+
+async function viewReport(){
+  const a=await getApiRaw('admin/report?days='+reportDays);
+  const q=a.questions||{},l4=a.l4||{};
+  const top=(a.top_docs||[]),maxHits=top.length?top[0].hits:1;
+  const zero=a.zero_hit_questions||[];
+  const l4items=(l4.items||[]).map(r=>`<tr><td class="src">${esc(r.filename||r.doc_id)}</td><td>${esc(r.owner_name)}</td><td>${esc(r.approver_name||'—')}</td>`
+    +`<td>${r.status==='approved'?'<span class="tag lv-L3">批准</span>':r.status==='rejected'?'<span class="tag lv-L4">驳回</span>':'<span class="tag lv-L2">审批中</span>'}</td>`
+    +`<td class="muted">${fmtTime(r.created_at)} → ${r.decided_at?fmtTime(r.decided_at):'—'}</td></tr>`).join('');
+  render(`
+  <div class="bar" style="justify-content:space-between">
+    <div style="display:flex;gap:8px;align-items:center">
+      <span class="muted">统计窗口</span>
+      <select id="rdays">${[7,30,90].map(n=>`<option value="${n}" ${reportDays===n?'selected':''}>近 ${n} 天</option>`).join('')}</select>
+    </div>
+    <span class="muted">生成于 ${new Date().toLocaleString('zh-CN')} · 数据源：审计日志/命中统计/L4审批单</span>
+  </div>
+  <div class="grid kpis" style="margin-bottom:16px">
+    <div class="kpi"><div class="n">${q.total??'—'}<small> 次</small></div><div class="t">问答总量</div><div class="sub">活跃用户 ${q.active_users??'—'} 人</div></div>
+    <div class="kpi"><div class="n">${q.has_result_rate!=null?q.has_result_rate+'<small> %</small>':'—'}</div><div class="t">有结果率</div><div class="sub">回答含至少 1 条引用</div></div>
+    <div class="kpi"><div class="n" ${zero.length?'style="color:var(--amber)"':''}>${zero.length}</div><div class="t">零命中问题（去重）</div><div class="sub">= 知识库缺口清单</div></div>
+    <div class="kpi"><div class="n">${l4.approved??'—'}<small> / ${l4.total??'—'}</small></div><div class="t">L4 敏感审批</div><div class="sub">批准 / 提交</div></div>
+  </div>
+  <div class="grid" style="grid-template-columns:1fr 1fr;margin-bottom:16px">
+    <div class="card"><h3>热门文档 Top 5</h3><div class="muted" style="margin-bottom:10px">按被引用次数</div>
+      <table><tbody>${top.map(d=>`<tr><td style="width:220px" class="src" title="${esc(d.source)}">${esc((d.source||'').slice(0,40))}</td><td><div style="display:flex;align-items:center;gap:10px"><div style="flex:1;height:8px;background:#eef1f5;border-radius:4px;overflow:hidden"><div style="height:100%;width:${Math.round(d.hits/maxHits*100)}%;background:var(--blue);border-radius:4px"></div></div><b>${d.hits}</b></div></td></tr>`).join('')||'<tr><td class="empty">该窗口暂无命中</td></tr>'}</tbody></table>
+    </div>
+    <div class="card"><h3>零命中问题（知识库缺口）</h3><div class="muted" style="margin-bottom:10px">这些提问没有任何文档被引用 → 建议按清单补充资料</div>
+      <table><thead><tr><th>问题</th><th style="width:60px">次数</th></tr></thead><tbody>${zero.map(z=>`<tr><td>${esc(z.question)}</td><td>${z.count}</td></tr>`).join('')||'<tr><td colspan="2" class="empty">没有零命中问题，很好</td></tr>'}</tbody></table>
+    </div>
+  </div>
+  <div class="card"><h3>L4 敏感档案审批记录</h3>
+    <table><thead><tr><th>文件</th><th style="width:90px">提交人</th><th style="width:90px">审批人</th><th style="width:80px">结果</th><th style="width:220px">时间</th></tr></thead>
+    <tbody>${l4items||'<tr><td colspan="5" class="empty">该窗口暂无 L4 审批</td></tr>'}</tbody></table>
+  </div>`);
+  document.getElementById('rdays').onchange=e=>{reportDays=+e.target.value;viewReport()};
+}
+
+async function viewMembers(){
+  if(!memCache){const [m,t]=await Promise.all([api('admin/members'),api('admin/depts')]);memCache={members:m.members,tree:t.tree}}
+  const q=memFilter.q,rows=memCache.members.filter(x=>
+    (!q||x.name.startsWith(q))&&(memFilter.dept?x.dept_ids.includes(memFilter.dept):true)&&(memFilter.showLeft||x.active));
+  const flat=[];(function walk(ns,d){ns.forEach(n=>{flat.push('　'.repeat(d)+esc(n.name)+(n.active?'':' <span class=off>(停用)</span>')+` <span class="muted">#${n.dept_id} · ${n.member_count}人</span>`);if(n.children.length)walk(n.children,d+1)})})(memCache.tree,0);
+  render(`
+  <div class="grid" style="grid-template-columns:1.6fr 1fr">
+    <div class="card"><h3>成员（${rows.length}）</h3>
+      <div class="bar">
+        <input type="text" id="mq" placeholder="搜姓名…" value="${esc(q)}">
+        <select id="md"><option value="0">全部部门</option>${memCache.members.flatMap(x=>x.dept_ids).filter((v,i,a)=>a.indexOf(v)===i).map(d=>`<option value="${d}" ${memFilter.dept==d?'selected':''}>#${d}</option>`).join('')}</select>
+        <label class="muted"><input type="checkbox" id="ml" ${memFilter.showLeft?'checked':''}> 含离职</label>
+      </div>
+      <table><thead><tr><th>姓名</th><th>职务</th><th>部门</th><th>标志</th><th>工号尾号</th><th>同步时间</th></tr></thead>
+      <tbody>${rows.map(x=>`<tr><td>${esc(x.name)}${x.active?'':' <span class="muted">(停用)</span>'}</td><td>${esc(x.title||'—')}</td><td class="muted">${(x.dept_names||[]).map(esc).join(' / ')||'—'}</td><td>${x.leader?'<span class="tag lv-L3">主管</span> ':''}${x.admin?'<span class="tag lv-L4">管理员</span>':''}${x.boss?'<span class="tag lv-L4">老板</span>':''}</td><td class="muted">${uid6(x.userid)}</td><td class="muted">${fmtTime(x.synced_at)}</td></tr>`).join('')||'<tr><td colspan="6" class="empty">没有符合条件的成员</td></tr>'}</tbody></table>
+    </div>
+    <div class="card"><h3>组织树（钉钉镜像）</h3><div class="tree">${flat.map(l=>'<div>'+l+'</div>').join('')}</div></div>
+  </div>
+  <div id="grayCard" class="card" style="margin-top:16px"><div class="empty">加载灰度状态…</div></div>`);
+  loadGrayCard();
+  document.getElementById('mq').oninput=e=>{memFilter.q=e.target.value;viewMembersRerender()};
+  document.getElementById('md').onchange=e=>{memFilter.dept=+e.target.value;viewMembersRerender()};
+  document.getElementById('ml').onchange=e=>{memFilter.showLeft=e.target.checked;viewMembersRerender()};
+}
+function viewMembersRerender(){
+  const q=memFilter.q,rows=memCache.members.filter(x=>
+    (!q||x.name.startsWith(q))&&(memFilter.dept?x.dept_ids.includes(memFilter.dept):true)&&(memFilter.showLeft||x.active));
+  const tb=document.querySelector('main tbody');
+  if(tb)tb.innerHTML=rows.map(x=>`<tr><td>${esc(x.name)}${x.active?'':' <span class="muted">(停用)</span>'}</td><td>${esc(x.title||'—')}</td><td class="muted">${(x.dept_names||[]).map(esc).join(' / ')||'—'}</td><td>${x.leader?'<span class="tag lv-L3">主管</span> ':''}${x.admin?'<span class="tag lv-L4">管理员</span>':''}${x.boss?'<span class="tag lv-L4">老板</span>':''}</td><td class="muted">${uid6(x.userid)}</td><td class="muted">${fmtTime(x.synced_at)}</td></tr>`).join('')||'<tr><td colspan="6" class="empty">没有符合条件的成员</td></tr>';
+  const h=document.querySelector('main .card h3');if(h)h.textContent='成员（'+rows.length+'）';
+}
+
+/* ---------- 同步 ---------- */
+async function viewSync(){
+  const s=await api('admin/sync?limit=30');
+  render(`
+  <div class="grid kpis" style="grid-template-columns:repeat(3,1fr)">
+    <div class="kpi"><div class="n">${s.users.active}<small> / ${s.users.total}</small></div><div class="t">在职 / 全部镜像成员</div></div>
+    <div class="kpi"><div class="n">${s.depts.active}<small> / ${s.depts.total}</small></div><div class="t">在职 / 全部部门</div></div>
+    <div class="kpi"><div class="n" style="font-size:17px;line-height:1.6">${fmtTime(s.last_dept_synced_at)}</div><div class="t">部门数据最后刷新</div></div>
+  </div>
+  <div class="card" style="margin-top:16px"><h3>同步日志（全量=每晚对账, stream_event=钉钉实时事件）</h3>
+  <table><thead><tr><th>时间</th><th>类型</th><th>内容</th><th>部门数</th><th>人数</th></tr></thead>
+  <tbody>${s.logs.map(l=>`<tr><td class="muted">${fmtTime(l.created_at)}</td><td>${l.kind==='full_sync'?'全量对账':'实时事件'}</td><td>${esc(l.detail)}</td><td>${l.dept_count}</td><td>${l.user_count}</td></tr>`).join('')||'<tr><td colspan="5" class="empty">暂无同步记录</td></tr>'}</tbody></table></div>`);
+}
+
+/* ---------- L4 审批 ---------- */
+let ME=null;
+let l4Cache=[],l4Filter='pending',l4Msg='';
+const L4_ST={pending:'待审批',approved:'已通过',rejected:'已驳回',cancelled:'已撤回'};
+async function viewL4(){
+  const q=await api('l4/queue');
+  l4Cache=q.items||[];
+  drawL4();
+}
+function drawL4(){
+  const cnt=s=>l4Cache.filter(x=>x.status===s).length;
+  const rows=l4Cache.filter(x=>l4Filter==='all'||x.status===l4Filter);
+  const seg=['pending','approved','rejected','cancelled','all'].map(s=>
+    `<button data-s="${s}" class="${l4Filter===s?'on':''}">${L4_ST[s]||'全部'}${s!=='all'?' ('+cnt(s)+')':''}</button>`).join('');
+  const tr=rows.map(x=>{
+    const st=x.status==='pending'?'<span class="tag lv-L4">待审批</span>'
+      :x.status==='approved'?'<span class="st-ok">已通过</span>'
+      :x.status==='rejected'?'<span class="st-bad">已驳回</span>'
+      :'<span class="muted">已撤回</span>';
+    let op='';
+    if(x.status==='pending'){
+      op=`<button class="btn" data-act="preview" data-id="${esc(x.doc_id)}">预览</button> `
+        +`<button class="btn" data-act="approve" data-id="${esc(x.doc_id)}">批准</button> `
+        +`<button class="btn" data-act="reject" data-id="${esc(x.doc_id)}">驳回</button>`;
+      if(ME&&ME.userid&&x.owner_userid===ME.userid)op+=` <button class="btn" data-act="cancel" data-id="${esc(x.doc_id)}">撤回</button>`;
+    }else if(x.decided_at||x.decision_reason){
+      op=`<span class="muted">${fmtTime(x.decided_at)}${x.decision_reason?' · '+esc(x.decision_reason):''}</span>`;
+    }
+    return `<tr><td class="src" title="${esc(x.filename)}">${esc(x.filename)}</td>`
+      +`<td>${x.size!=null?(x.size/1024).toFixed(1):'—'}</td>`
+      +`<td>${esc(x.owner_name||uid6(x.owner_userid))}</td>`
+      +`<td>${esc(x.approver_name||uid6(x.approver_userid))}</td>`
+      +`<td><span class="tag lv-L4">L4</span> <span class="muted">${x.acl_summary?.visible_count??'—'} 人</span></td>`
+      +`<td class="muted">${fmtTime(x.created_at)}</td><td>${st}</td><td>${op}</td></tr>`;
+  }).join('');
+  render(`
+  <div id="l4toast">${l4Msg?'<div class="toast">'+esc(l4Msg)+'</div>':''}</div>
+  <div class="card">
+    <div class="bar">
+      <div class="seg" id="l4seg">${seg}</div>
+      <span class="muted">${rows.length} / ${l4Cache.length} 单${ME&&ME.admin?' · 管理员视野(全部)':(ME&&ME.leader?' · 仅指派给我':'')} · 待审批 ${cnt('pending')} 单</span>
+    </div>
+    <table><thead><tr><th>文档</th><th>大小(KB)</th><th>上传者</th><th>审批人</th><th>可见范围</th><th>提交时间</th><th>状态</th><th>操作</th></tr></thead>
+    <tbody>${tr||'<tr><td colspan="8" class="empty">没有符合条件的审批单</td></tr>'}</tbody></table>
+  </div>`);
+  document.getElementById('l4seg').onclick=e=>{
+    const b=e.target.closest('button');if(b){l4Filter=b.dataset.s;drawL4()}
+  };
+  document.querySelector('main tbody').onclick=async e=>{
+    const b=e.target.closest('button[data-act]');if(!b)return;
+    const id=b.dataset.id,act=b.dataset.act;
+    b.disabled=true;
+    try{
+      if(act==='preview'){
+        const p=await getApiRaw('l4/'+id+'/preview');
+        showL4Pop(p);
+      }else if(act==='approve'){
+        if(!confirm('确认批准该 L4 文档入库？'))return;
+        await postApi('l4/'+id+'/approve');
+        l4Msg='已批准，文档进入入库流程';await viewL4();
+      }else if(act==='reject'){
+        const reason=prompt('驳回理由（必填）：');
+        if(reason==null)return;
+        if(!reason.trim()){alert('驳回理由不能为空');return}
+        await postApi('l4/'+id+'/reject',{reason:reason.trim()});
+        l4Msg='已驳回';await viewL4();
+      }else if(act==='cancel'){
+        if(!confirm('确认撤回该审批申请？'))return;
+        await postApi('l4/'+id+'/cancel');
+        l4Msg='已撤回';await viewL4();
+      }
+    }catch(err){
+      l4Msg='操作失败: '+(err.message||err);
+      drawL4();
+    }
+  };
+}
+function showL4Pop(p){
+  const pop=document.getElementById('l4pop');
+  pop.innerHTML=`<h3>${esc(p.filename||'预览')} <button class="btn" id="l4popx">关闭</button></h3>
+  <div class="muted" style="margin-bottom:8px">上传者 ${esc(p.owner_name||'—')} · ${p.size!=null?(p.size/1024).toFixed(1)+' KB':''} · ${fmtTime(p.created_at)}</div>
+  ${p.ok?`<pre>${esc(p.text)}</pre>`:`<div class="muted">${esc(p.note||'无法预览')}</div>`}`;
+  pop.style.display='block';
+  document.getElementById('l4popx').onclick=()=>{pop.style.display='none'};
+}
+
+/* ---------- 校对队列 (#5) ---------- */
+let revCache=[],revFilter='pending',revMsg='';
+const REV_ST={pending:'待校对',approved:'已入库',rejected:'已驳回'};
+const REV_RULE={'sparse':'疑似漏识别','noise':'疑似乱码','broken_run':'连续重复','mark_density':'占位符多'};
+function revBadges(issues){
+  return (issues||[]).map(i=>`<span class="ibadge" title="${esc(i.msg||'')}">${esc(REV_RULE[i.rule]||i.rule||'异常')}</span>`).join('')||'<span class="muted">—</span>';
+}
+async function viewReview(){
+  const q=await getApiRaw('review/queue');
+  revCache=q.items||[];
+  drawReview();
+}
+function drawReview(){
+  const cnt=s=>revCache.filter(x=>x.status===s).length;
+  const rows=revCache.filter(x=>revFilter==='all'||x.status===revFilter);
+  const seg=['pending','approved','rejected','all'].map(s=>
+    `<button data-s="${s}" class="${revFilter===s?'on':''}">${REV_ST[s]||'全部'}${s!=='all'?' ('+cnt(s)+')':''}</button>`).join('');
+  const tr=rows.map(x=>{
+    const st=x.status==='pending'?'<span class="tag st-pend">待校对</span>'
+      :x.status==='approved'?'<span class="tag st-appr">已入库</span>'
+      :'<span class="tag st-rej">已驳回</span>';
+    const meta=[x.pages!=null?x.pages+' 页':null,
+      x.size!=null?(x.size/1024).toFixed(1)+' KB':null].filter(Boolean).join(' · ')||'—';
+    let op='';
+    if(x.status==='pending'){
+      op=`<button class="btn" data-act="view" data-id="${esc(x.doc_id)}">查看识别稿</button> `
+        +`<button class="btn" data-act="approve" data-id="${esc(x.doc_id)}">批准</button> `
+        +`<button class="btn" data-act="reject" data-id="${esc(x.doc_id)}">驳回</button>`;
+    }else if(x.decided_at||x.decision_note){
+      op=`<span class="muted">${fmtTime(x.decided_at)}${x.decision_note?' · '+esc(x.decision_note):''}</span>`;
+    }
+    return `<tr><td class="src" title="${esc(x.filename)}">${esc(x.filename)}</td>`
+      +`<td>${esc(x.owner_name||uid6(x.owner_userid))}</td>`
+      +`<td class="muted">${meta}</td>`
+      +`<td>${revBadges(x.issues)}</td>`
+      +`<td>${st}</td>`
+      +`<td class="muted">${fmtTime(x.created_at)}</td><td>${op}</td></tr>`;
+  }).join('');
+  render(`
+  <div id="revtoast">${revMsg?'<div class="toast">'+esc(revMsg)+'</div>':''}</div>
+  <div class="card">
+    <div class="bar">
+      <div class="seg" id="revseg">${seg}</div>
+      <span class="muted">${rows.length} / ${revCache.length} 篇 · OCR 低置信扫描件等待人工校对, 批准后才正式入库</span>
+    </div>
+    <table><thead><tr><th>文档</th><th>所有者</th><th>页数/大小</th><th>质量信号</th><th>状态</th><th>提交时间</th><th>操作</th></tr></thead>
+    <tbody>${tr||'<tr><td colspan="7" class="empty">没有符合条件的校对单</td></tr>'}</tbody></table>
+  </div>`);
+  document.getElementById('revseg').onclick=e=>{
+    const b=e.target.closest('button');if(b){revFilter=b.dataset.s;drawReview()}
+  };
+  document.querySelector('main tbody').onclick=async e=>{
+    const b=e.target.closest('button[data-act]');if(!b)return;
+    const id=b.dataset.id,act=b.dataset.act;
+    b.disabled=true;
+    try{
+      if(act==='view'){
+        const d=await getApiRaw('review/'+id);
+        showRevPop(d);
+      }else if(act==='approve'){
+        if(!confirm('不编辑识别稿, 直接批准入库？'))return;
+        const r=await postApi('review/'+id+'/approve',{ });
+        revMsg='已批准入库, 切块 '+ (r.chunks??'?') +' 段';await viewReview();
+      }else if(act==='reject'){
+        const reason=prompt('驳回理由（必填）：');
+        if(reason==null)return;
+        if(!reason.trim()){alert('驳回理由不能为空');return}
+        await postApi('review/'+id+'/reject',{reason:reason.trim()});
+        revMsg='已驳回';await viewReview();
+      }
+    }catch(err){
+      revMsg='操作失败: '+(err.message||err);
+      drawReview();
+    }
+  };
+}
+function showRevPop(d){
+  const pop=document.getElementById('revpop');
+  pop.innerHTML=`<h3>${esc(d.filename||'识别稿')} <button class="btn" id="revpopx">关闭</button></h3>
+  <div class="muted" style="margin-bottom:8px">${esc(d.owner_name||uid6(d.owner_userid))} · ${d.pages!=null?d.pages+' 页':''} ${d.size!=null?' · '+(d.size/1024).toFixed(1)+' KB':''} · ${fmtTime(d.created_at)}</div>
+  ${(d.issues||[]).length?'<div style="margin-bottom:8px">'+(d.issues||[]).map(i=>`<div style="color:var(--red);font-size:12px;margin:2px 0">⚠ ${esc(REV_RULE[i.rule]||i.rule||'异常')}: ${esc(i.msg||'')}</div>`).join('')+'</div>':'<div class="muted" style="margin-bottom:8px">无质量信号</div>'}
+  <textarea id="revtext" ${d.status!=='pending'?'disabled':''}>${esc(d.suggested_text)}</textarea>
+  ${d.status==='pending'
+    ?`<div class="bar" style="margin-bottom:0"><button class="btn" id="revpopok" style="color:var(--green);font-weight:600">批准入库</button><button class="btn" id="revpopno" style="color:var(--red)">驳回</button><span class="muted">编辑后可批准, 批准即以当前文本切块入库</span></div>`
+    :`<div class="muted">当前状态 ${REV_ST[d.status]||esc(d.status||'')}${d.decided_at?' · '+fmtTime(d.decided_at):''}${d.decision_note?' · '+esc(d.decision_note):''}</div>`}`;
+  pop.style.display='block';
+  document.getElementById('revpopx').onclick=()=>{pop.style.display='none'};
+  const ok=document.getElementById('revpopok');
+  if(ok)ok.onclick=async()=>{
+    const text=document.getElementById('revtext').value;
+    if(!text.trim()){alert('识别稿文本为空, 无法批准入库');return}
+    if(!confirm('确认以当前文本批准入库？'))return;
+    ok.disabled=true;
+    try{
+      const r=await postApi('review/'+d.doc_id+'/approve',{text});
+      pop.style.display='none';
+      revMsg='已批准入库, 切块 '+(r.chunks??'?')+' 段';await viewReview();
+    }catch(err){revMsg='操作失败: '+(err.message||err);pop.style.display='none';drawReview()}
+  };
+  const no=document.getElementById('revpopno');
+  if(no)no.onclick=async()=>{
+    const reason=prompt('驳回理由（必填）：');
+    if(reason==null)return;
+    if(!reason.trim()){alert('驳回理由不能为空');return}
+    no.disabled=true;
+    try{
+      await postApi('review/'+d.doc_id+'/reject',{reason:reason.trim()});
+      pop.style.display='none';
+      revMsg='已驳回';await viewReview();
+    }catch(err){revMsg='操作失败: '+(err.message||err);pop.style.display='none';drawReview()}
+  };
+}
+
+/* ---------- 审计日志 (#4) ---------- */
+let auditCache=[],auditFilter={action:'',limit:100};
+const AUDIT_ACT={'chat_search':'检索问答','doc_view':'查看原文','l4_preview':'L4预览','l4_approve':'L4批准','l4_reject':'L4驳回','l4_cancel':'L4撤回','admin_documents_full_view':'管理全量视野'};
+function auditDetail(x){
+  const d=x.detail||{};
+  if(x.action==='chat_search'){
+    const q=d.question?esc(String(d.question).slice(0,60)):'';
+    return (q?q+' · ':'')+`命中 ${d.hits??'?'} 篇`;
+  }
+  if(x.action==='doc_view') return esc(d.source||'')+(d.chunks!=null?' · '+d.chunks+' 段':'');
+  if(x.action==='l4_reject') return esc(d.reason||'');
+  if(x.action==='l4_approve'||x.action==='l4_preview'||x.action==='l4_cancel') return esc(d.filename||(d.owner_name||''));
+  return esc(JSON.stringify(d).slice(0,120).replace(/["{}]/g,''));
+}
+async function viewAudit(){
+  const a=await getApiRaw('admin/audit?limit='+auditFilter.limit+(auditFilter.action?('&action='+encodeURIComponent(auditFilter.action)):''));
+  auditCache=a.items||[];
+  drawAudit();
+}
+function drawAudit(){
+  const acts=Object.keys(AUDIT_ACT);
+  const tr=auditCache.map(x=>`<tr><td class="muted">${fmtTime(x.created_at)}</td><td>${esc(x.actor)}</td>`
+    +`<td><span class="tag ${x.action==='doc_view'?'lv-L2':(x.action||'').startsWith('l4_')?'lv-L4':'lv-L3'}">${AUDIT_ACT[x.action]||esc(x.action)}</span></td>`
+    +`<td class="src" title="${esc(x.target)}">${esc((x.target||'').slice(0,40))||'—'}</td>`
+    +`<td class="muted" style="max-width:420px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${auditDetail(x)}">${auditDetail(x)||'—'}</td></tr>`).join('');
+  render(`
+  <div class="card">
+    <div class="bar">
+      <select id="aaact"><option value="">全部动作</option>${acts.map(v=>`<option value="${v}" ${auditFilter.action===v?'selected':''}>${AUDIT_ACT[v]} (${v})</option>`).join('')}</select>
+      <select id="aalim">${[100,500].map(n=>`<option value="${n}" ${auditFilter.limit===n?'selected':''}>最近 ${n} 条</option>`).join('')}</select>
+      <button class="btn" id="aarefresh">刷新</button>
+      <span class="muted">${auditCache.length} 条 · 敏感动作审计(检索/原文查看/L4 审批), 倒序</span>
+    </div>
+    <table><thead><tr><th>时间</th><th>操作者</th><th>动作</th><th>对象</th><th>详情</th></tr></thead>
+    <tbody>${tr||'<tr><td colspan="5" class="empty">暂无审计记录</td></tr>'}</tbody></table>
+  </div>`);
+  document.getElementById('aaact').onchange=e=>{auditFilter.action=e.target.value;viewAudit()};
+  document.getElementById('aalim').onchange=e=>{auditFilter.limit=+e.target.value;viewAudit()};
+  document.getElementById('aarefresh').onclick=()=>viewAudit();
+}
+
+/* ---------- 命中统计 (#6) ---------- */
+let reportDays=30;
+let hitsFilter={days:30};
+async function viewHits(){
+  const a=await getApiRaw('admin/hits?days='+hitsFilter.days+'&limit=200');
+  const s=a.summary||{},items=a.items||[];
+  const tr=items.map(d=>`<tr><td class="src" title="${esc(d.source)}">${esc((d.source||d.doc_id||'').slice(0,50))}</td>`
+    +`<td><b>${d.hits}</b></td><td class="muted">${fmtTime(d.last_hit_at)}</td><td class="muted">${d.uniq_askers}</td></tr>`).join('');
+  render(`
+  <div class="grid kpis">
+    <div class="kpi"><div class="n">${s.total_hits??'—'}</div><div class="t">总命中次数</div><div class="sub">近 ${a.days} 天 · 问答检索落账</div></div>
+    <div class="kpi"><div class="n">${s.total_docs_hit??'—'}<small> / ${s.total_docs??'—'}</small></div><div class="t">被命中文档</div><div class="sub">现存文档 ${s.total_docs??'—'} 篇${s.total_docs_from&&s.total_docs_from!=='qdrant'?'（口径:'+esc(s.total_docs_from)+'）':''}</div></div>
+    <div class="kpi"><div class="n" ${(s.no_hit_docs||0)>0?'style="color:var(--red)"':''}>${s.no_hit_docs??'—'}</div><div class="t">从未被命中</div><div class="sub">${(s.no_hit_docs||0)>0?'<span class="st-bad">考虑清理或补宣传</span>':'全库都被用过'}</div></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <div class="bar">
+      <select id="hdays">${[7,30,90].map(n=>`<option value="${n}" ${hitsFilter.days===n?'selected':''}>近 ${n} 天</option>`).join('')}</select>
+      <button class="btn" id="hrefresh">刷新</button>
+      <span class="muted">按命中次数倒序 · 一次问答对每个文档最多计 1 次 · 共 ${items.length} 篇有命中</span>
+    </div>
+    <table><thead><tr><th>文档</th><th>命中次数</th><th>最近命中</th><th>提问人数</th></tr></thead>
+    <tbody>${tr||'<tr><td colspan="4" class="empty">该时间段暂无命中记录</td></tr>'}</tbody></table>
+  </div>`);
+  document.getElementById('hdays').onchange=e=>{hitsFilter.days=+e.target.value;viewHits()};
+  document.getElementById('hrefresh').onclick=()=>viewHits();
+}
+
+/* ---------- 批量导入 (P2b v2: 自动分批 + L4 + 敏感文件提醒) ---------- */
+let batchFiles=[],batchDepts=[],batchMsg='',batchResults=[],batchProgress=null;
+const BATCH_MAX_FILES=100, BATCH_MAX_BYTES=380*1024*1024;
+const SENSITIVE_RE=/(合同|协议|报价|底价|中标|采购|工资|薪酬|税|审计|财报|身份证|许可证|开户)/;
+function batchChunks(){
+  const out=[];let cur=[],bytes=0;
+  for(const b of batchFiles){
+    if(cur.length&&((cur.length>=BATCH_MAX_FILES)||(bytes+b.size>BATCH_MAX_BYTES))){out.push(cur);cur=[];bytes=0}
+    cur.push(b);bytes+=b.size;
+  }
+  if(cur.length)out.push(cur);
+  return out;
+}
+async function viewBatch(){
+  if(!batchDepts.length){try{const d=await api('directory/depts');batchDepts=d.depts||[]}catch(e){batchDepts=[]}}
+  const filesShown=batchFiles.slice(0,300).map((f,i)=>
+    `<tr><td>${i+1}</td><td class="src" title="${esc(f.rel||f.name)}">${esc(f.name)}</td><td>${(f.size/1024).toFixed(0)}KB</td></tr>`).join('');
+  const nSens=batchFiles.filter(f=>SENSITIVE_RE.test(f.name)).length;
+  const chunks=batchFiles.length?batchChunks():[];
+  const busy=!!batchProgress;
+  const deptOpts=()=>batchDepts.map(d=>`<option value="${d.dept_id}">${esc(d.name)} #${d.dept_id}</option>`).join('');
+  render(`
+  <div class="card">
+    <h3>批量导入存量文档</h3>
+    <div class="muted" style="margin-bottom:10px">选好文件后点「导入」，<b>超过 100 个文件会自动拆成多批依次提交，不需要手工分批</b>。逐文件走与单传完全相同的状态机与门禁（格式路由、哈希去重、质量门禁、低置信进校对队列）。密级选择：<b>L3 公司级</b>适合公开资料（介绍/证照）；<b>合同、财务、报价类一律选 L2（本部门可见）或 L4（指定部门，需负责人审批）</b>。</div>
+    <div class="bar">
+      <label>批次密级
+        <select id="blv" ${busy?'disabled':''}>${['L3','L2','L1','L4'].map(l=>`<option value="${l}" ${l===batchLevel?'selected':''}>${l} ${LV[l]}</option>`).join('')}</select>
+      </label>
+      ${batchLevel==='L2'?`<label>归属部门 <select id="bdept">${deptOpts()}</select></label>`:''}
+      ${batchLevel==='L4'?`<label>可见部门（可多选，各部门负责人将逐份审批）
+        <select id="bl4depts" multiple size="5" style="min-width:160px">${deptOpts()}</select></label>`:''}
+      <button class="btn" id="bpickFiles" ${busy?'disabled':''}>选择文件</button>
+      <button class="btn" id="bpickDir" ${busy?'disabled':''}>选择文件夹</button>
+      <input type="file" id="bfiles" multiple style="display:none">
+      <input type="file" id="bdir" webkitdirectory multiple style="display:none">
+      <button class="btn primary" id="bsubmit" ${(batchFiles.length&&!busy)?'':'disabled'}>${busy?'导入中…':'导入 '+batchFiles.length+' 个文件'}</button>
+      <button class="btn" id="bclear" ${(batchFiles.length&&!busy)?'':'disabled'}>清空</button>
+    </div>
+    ${batchMsg?`<div class="${batchMsg.startsWith('✗')?'err':'toast'}">${esc(batchMsg)}</div>`:''}
+    ${!busy&&batchFiles.length&&nSens>0?`<div class="toast" style="background:#fef3c7;border:1px solid #f59e0b;color:#92400e">⚠ 检测到 ${nSens}/${batchFiles.length} 个文件名含合同/财务/证照类关键词${batchLevel==='L3'?'，当前选的是 L3（全员可见）——若是合同请勿用 L3，改选 L2 或 L4':''}。请确认密级后再导入。</div>`:''}
+    ${!busy&&batchFiles.length>100?`<div class="muted" style="margin:6px 0">已选 ${batchFiles.length} 个文件，将自动拆为 <b>${chunks.length}</b> 批依次提交（每批 ≤100 个且 ≤380MB）。</div>`:''}
+    ${batchProgress?`<div class="toast">正在提交：第 ${batchProgress.done+1}/${batchProgress.total} 批（${batchProgress.curCount} 个文件）… 大文件夹需要一些时间，请勿关闭页面。</div>`:''}
+    ${batchFiles.length?`<div class="muted" style="margin:8px 0">已选 ${batchFiles.length} 个文件${batchFiles.length>300?'（列表仅显示前 300）':''}</div>
+    <table><thead><tr><th>#</th><th>文件</th><th>大小</th></tr></thead><tbody>${filesShown}</tbody></table>`:'<div class="empty">尚未选择文件 — 点上方「选择文件夹」选中整个目录即可</div>'}
+  </div>
+  ${batchResults.length?(()=>{
+    const all=batchResults.flatMap(g=>g.results);
+    const acc=all.filter(r=>r.ok), rej=all.filter(r=>!r.ok);
+    return `<div class="card" style="margin-top:16px"><h3>导入结果 <span class="muted">共 ${all.length} 个文件 · ${batchResults.length} 批</span></h3>
+    <div class="bar"><span><b style="color:var(--green,#166534)">受理 ${acc.length}</b>（其中待审批 ${acc.filter(r=>r.status==='pending_approval').length}）· <b style="color:var(--red,#991b1b)">拒绝 ${rej.length}</b> · 受理文件的解析进度在「文档管理」页跟踪，完成后可在对话页检索</span></div>
+    <table><thead><tr><th>文件</th><th>结果</th><th>说明</th></tr></thead><tbody>
+    ${all.map(r=>`<tr><td class="src">${esc(r.filename||'')}</td><td>${r.ok?'<span class="st-ok">'+(r.status==='pending_approval'?'待审批':'已排队')+'</span>':'<span class="st-bad">拒绝</span>'}</td><td class="muted">${esc(r.ok?(r.status==='pending_approval'?'L4 需审批，已通知审批人':'入库任务已提交'):r.reason)}</td></tr>`).join('')}
+    </tbody></table></div>`})():''}`);
+  const $=id=>document.getElementById(id);
+  if($('blv'))$('blv').onchange=e=>{batchLevel=e.target.value;viewBatch()};
+  if($('bpickFiles'))$('bpickFiles').onclick=()=>$('bfiles').click();
+  if($('bpickDir'))$('bpickDir').onclick=()=>$('bdir').click();
+  if($('bfiles'))$('bfiles').onchange=e=>{addBatchFiles(e.target.files);e.target.value=''};
+  if($('bdir'))$('bdir').onchange=e=>{addBatchFiles(e.target.files);e.target.value=''};
+  if($('bclear'))$('bclear').onclick=()=>{if(batchProgress)return;batchFiles=[];batchMsg='';viewBatch()};
+  if($('bsubmit'))$('bsubmit').onclick=submitBatch;
+}
+let batchLevel='L3';
+function addBatchFiles(fl){
+  const ALLOW=/\.(pdf|docx|xlsx|xlsm|xls|csv|pptx|md|txt|png|jpg|jpeg|webp)$/i;
+  let added=0,skipped=0;
+  for(const f of fl){
+    const rel=(f.webkitRelativePath||'');
+    // 文件夹模式下跳过隐藏/系统文件; 扩展名过滤(拒收格式前端先挡, 后端仍有最终校验)
+    if(f.name.startsWith('~$')||f.name==='Thumbs.db') {skipped++;continue}
+    if(!ALLOW.test(f.name)){skipped++;continue}
+    batchFiles.push({file:f, name:f.name, rel, size:f.size});
+    added++;
+  }
+  batchMsg=(skipped?('跳过 '+skipped+' 个不支持/系统文件; '):'')+'';
+  viewBatch();
+}
+async function submitBatch(){
+  if(!batchFiles.length)return;
+  if(batchLevel==='L2'){const s=document.getElementById('bdept');if(!s||!s.value){batchMsg='✗ L2 需选择归属部门';viewBatch();return}}
+  if(batchLevel==='L4'){const s=document.getElementById('bl4depts');if(!s||!Array.from(s.selectedOptions).length){batchMsg='✗ L4 需至少选择一个可见部门';viewBatch();return}}
+  const chunks=batchChunks();
+  batchResults=[];batchMsg='';
+  for(let i=0;i<chunks.length;i++){
+    batchProgress={done:i,total:chunks.length,curCount:chunks[i].length};
+    viewBatch();
+    const fd=new FormData();
+    fd.append('level',batchLevel);
+    if(batchLevel==='L2')fd.append('dept_ids',document.getElementById('bdept').value);
+    if(batchLevel==='L4')fd.append('l4_dept_ids',Array.from(document.getElementById('bl4depts').selectedOptions).map(o=>o.value).join(','));
+    for(const b of chunks[i])fd.append('files',b.file,b.name);
+    try{
+      const r=await fetch('/api/upload/batch',{method:'POST',headers:H,body:fd});
+      if(!r.ok){
+        let detail='';try{const j=await r.json();detail=j.detail||''}catch(e){}
+        throw new Error(detail||('接口异常 '+r.status));
+      }
+      batchResults.push(await r.json());
+    }catch(e){
+      batchMsg='✗ 第 '+(i+1)+'/'+chunks.length+' 批失败: '+(e.message||e)+'。前 '+i+' 批已成功入库（重复文件可在「文档管理」核对），可修正后重选剩余文件再导。';
+      batchProgress=null;viewBatch();return;
+    }
+  }
+  batchProgress=null;batchFiles=[];
+  viewBatch();
+  window.scrollTo(0,document.body.scrollHeight);
+}
+
+/* ---------- P5: 关系驾驶舱 ---------- */
+let graphCache=null,graphSel=null;
+async function viewGraph(){
+  if(!graphCache)graphCache=await api('admin/graph');
+  drawGraph();
+}
+function fmtFlags(m){
+  const f=[];if(m.leader)f.push('负责人');if(m.boss)f.push('老板');if(m.admin)f.push('管理员');
+  return f.length?f.join(' / '):'普通成员';
+}
+function drawGraph(){
+  const P=graphCache,root=P.root_dept_id;
+  const depts=P.nodes.filter(n=>n.type==='dept');
+  const users=P.nodes.filter(n=>n.type==='user');
+  const subs=depts.filter(d=>d.id!==root);
+  const edgesOf=(uid)=>P.edges.filter(e=>e.from===uid&&e.kind!=='child');
+  const membersOf={};depts.forEach(d=>{membersOf[d.id]=[]});
+  users.forEach(u=>edgesOf(u.id).forEach(e=>{if(membersOf[e.to])membersOf[e.to].push(u)}));
+  Object.values(membersOf).forEach(a=>a.sort((x,y)=>(y.meta.leader?1:0)-(x.meta.leader?1:0)));
+  const rootMembers=membersOf[root]||[];
+  // ---- 分层泳道布局 ----
+  const W=Math.max(1060,120+subs.length*150);
+  const rootY=50,rootBoxW=250;
+  const rCols=rootMembers.length?Math.min(8,Math.max(2,Math.ceil(rootMembers.length/3))):0;
+  const rRows=Math.ceil(rootMembers.length/(rCols||1));
+  const rTop=rootY+58,rRowH=56,rColGap=66;
+  const bandEnd=rTop+(rRows-1)*rRowH+24;
+  const trunkY=bandEnd+26,deptY=trunkY+22;
+  const subGap=W/(subs.length+1);
+  const deptPos={};deptPos[root]={x:W/2,y:rootY};
+  subs.forEach((d,i)=>{deptPos[d.id]={x:subGap*(i+1),y:deptY}});
+  const maxSubRows=Math.max(1,...subs.map(d=>Math.ceil(membersOf[d.id].filter(u=>!u.meta.root_only).length/2)));
+  const H=deptY+70+maxSubRows*58+20;
+  const userPos={};
+  function place(list,baseX,baseY,cols,gap){
+    list.forEach((u,i)=>{
+      const r=Math.floor(i/cols),cc=i%cols;
+      const inRow=Math.min(list.length-r*cols,cols);
+      userPos[u.id]={x:baseX+(cc-(inRow-1)/2)*gap,y:baseY+r*rRowH};
+    });
+  }
+  place(rootMembers,W/2,rTop,rCols,rColGap);
+  subs.forEach(d=>{place(membersOf[d.id].filter(u=>!u.meta.root_only),deptPos[d.id].x,deptY+56,2,64)});
+  // ---- 连线 ----
+  let lines='';
+  // 根 → 直属成员 扇形细线
+  rootMembers.forEach(u=>{const p=userPos[u.id];
+    lines+=`<line x1="${W/2}" y1="${rootY+18}" x2="${p.x}" y2="${p.y-12}" class="gl-belong"/>`});
+  // 干线: 根底部 →  trunk → 各部门
+  lines+=`<line x1="${W/2}" y1="${rootY+40}" x2="${W/2}" y2="${trunkY}" class="gl-child"/>`;
+  const xs=subs.map(d=>deptPos[d.id].x);
+  lines+=`<line x1="${Math.min(...xs)}" y1="${trunkY}" x2="${Math.max(...xs)}" y2="${trunkY}" class="gl-child"/>`;
+  subs.forEach(d=>{const p=deptPos[d.id];
+    lines+=`<line x1="${p.x}" y1="${trunkY}" x2="${p.x}" y2="${p.y-18}" class="gl-child"/>`});
+  // 二级以下部门 (防御性直连父部门)
+  depts.forEach(d=>{if(d.id!==root&&!subs.includes(d)){const a=deptPos[d.id],b=deptPos[d.parent];
+    if(a&&b)lines+=`<line x1="${b.x}" y1="${b.y+18}" x2="${a.x}" y2="${a.y-18}" class="gl-child"/>`}});
+  // 部门 → 成员 (含 leads 金线)
+  P.edges.forEach(e=>{
+    if(e.kind==='child')return;
+    const a=userPos[e.from],b=deptPos[e.to];
+    if(!a||!b||b.y===rootY)return; // 根成员扇形已画
+    lines+=`<line x1="${b.x}" y1="${b.y+40}" x2="${a.x}" y2="${a.y-12}" class="${e.kind==='leads'?'gl-leads':'gl-belong'}"/>`;
+  });
+  // ---- 节点 ----
+  const deptNodes=depts.map(d=>{
+    const p=deptPos[d.id],m=d.meta,bw=d.id===root?rootBoxW:150;
+    const cls=(d.id===root?'gd gd-root ':'gd ')+(m.active?'':' gd-off');
+    const dot=m.gray_open?'<circle cx="'+(p.x+bw/2-9)+'" cy="'+(p.y-9)+'" r="4" class="gdotc-on"/>':'<circle cx="'+(p.x+bw/2-9)+'" cy="'+(p.y-9)+'" r="4" class="gdotc-off"/>';
+    const lname=m.leaders.length?m.leaders.join('、'):'';
+    const sub=[m.member_count+' 人',lname?('负责:'+esc(lname.length>6?lname.slice(0,6)+'…':lname)):'',d.id===root?'':'<tspan class="'+(m.gray_open?'ts-on':'ts-off')+'">'+(m.gray_open?'已开放':'未开放')+'</tspan>'].filter(Boolean).join(' · ');
+    return `<g class="${cls}" data-d="${d.id}"><rect x="${p.x-bw/2}" y="${p.y-17}" width="${bw}" height="34" rx="9"/>`
+      +`<text x="${p.x}" y="${p.y+4}" text-anchor="middle">${esc(d.name.length>14?d.name.slice(0,14)+'…':d.name)}</text>${d.id===root?'':dot}`
+      +`<text x="${p.x}" y="${p.y+31}" text-anchor="middle" class="gsub" font-size="10">${sub}</text></g>`;
+  }).join('');
+  const userNodes=users.map(u=>{
+    const p=userPos[u.id];if(!p)return '';
+    const cls='gu'+(u.meta.leader?' gu-leader':'')+(graphSel&&graphSel.t==='u'&&graphSel.id===u.id?' gsel':'');
+    const nm=u.name.length>5?u.name.slice(0,5)+'…':u.name;
+    return `<g class="${cls}" data-u="${esc(u.id)}"><circle cx="${p.x}" cy="${p.y-2}" r="10"/>`
+      +`<text x="${p.x}" y="${p.y+18}" text-anchor="middle" class="gname">${esc(nm)}</text></g>`;
+  }).join('');
+  // ---- 侧栏 ----
+  const dsel=graphSel&&graphSel.t==='d'?depts.find(d=>d.id===graphSel.id):null;
+  const use=graphSel&&graphSel.t==='u'?users.find(u=>u.id===graphSel.id):null;
+  let side;
+  if(dsel){
+    const m=dsel.meta,mm=membersOf[dsel.id]||[];
+    side=`<h3>${esc(dsel.name)} <span class="muted">#${dsel.id}</span></h3>
+      <table><tbody>
+      <tr><td class="muted">状态</td><td>${m.active?'在职运行':'<span class="st-bad">已停用</span>'}</td></tr>
+      <tr><td class="muted">灰度开放</td><td>${m.gray_open?'<span class="st-ok">已开放</span>':'<span class="tg-wait tag">未开放</span>'}${m.gray_opened_at?' <span class="muted">'+esc(fmtTime(m.gray_opened_at))+'</span>':''}</td></tr>
+      <tr><td class="muted">负责人</td><td>${m.leaders.length?esc(m.leaders.join('、')):'<span class="muted">未标记</span>'}</td></tr>
+      <tr><td class="muted">成员数</td><td>${mm.length} 人</td></tr>
+      <tr><td class="muted">归属文档</td><td>${m.doc_count} 篇（近 ${P.hit_days} 天命中 ${m.hit_count} 次）</td></tr>
+      </tbody></table>
+      <div class="muted" style="margin-top:10px">成员：${mm.map(x=>esc(x.name)+(x.meta.leader?'（负责）':'')).join('、')||'—'}</div>`;
+  }else if(use){
+    const m=use.meta,deptNames=m.dept_ids.map(d=>{const dd=depts.find(x=>x.id===d);return dd?dd.name:'#'+d});
+    side=`<h3>${esc(use.name)}</h3>
+      <table><tbody>
+      <tr><td class="muted">职务</td><td>${esc(m.title||'—')}</td></tr>
+      <tr><td class="muted">部门</td><td>${deptNames.map(esc).join(' / ')||'—'}</td></tr>
+      <tr><td class="muted">身份</td><td>${fmtFlags(m)}</td></tr>
+      <tr><td class="muted">跨部门任职</td><td>${m.multi_dept?'<span class="tag lv-L2">是</span>':'否'}</td></tr>
+      </tbody></table>`;
+  }else{
+    side=`<div class="muted">点击图中部门或人员查看详情。<br><br>
+      <b style="color:var(--ink)">图例</b><br>
+      金圈 = 部门负责人 · 灰色细线 = 任职关系 · 金色线 = 负责人任职<br>
+      部门右上角小圆点：<span class="gdot gdot-on"></span>灰度已开放 / <span class="gdot gdot-off"></span>未开放<br>
+      布局：上层为公司直属成员，下层按部门分组。<br><br>
+      共 ${P.summary.depts} 个部门 · ${P.summary.users_active} 名在职成员 · ${P.summary.leaders} 名负责人${P.summary.multi_dept_users?(' · '+P.summary.multi_dept_users+' 人跨部门任职'):''}。</div>`;
+  }
+  render(`
+  <div class="grid" style="grid-template-columns:1.8fr 1fr">
+    <div class="card"><h3>公司 → 部门 → 人（钉钉镜像 · 只读）</h3>
+      <div style="overflow-x:auto"><svg viewBox="0 0 ${W} ${H}" width="100%" style="min-width:${Math.min(W,860)}px">${lines}${deptNodes}${userNodes}</svg></div>
+    </div>
+    <div class="card" id="gsSide">${side}</div>
+  </div>`);
+  document.querySelectorAll('#main svg g[data-d]').forEach(g=>g.onclick=()=>{graphSel={t:'d',id:+g.dataset.d};drawGraph()});
+  document.querySelectorAll('#main svg g[data-u]').forEach(g=>g.onclick=()=>{graphSel={t:'u',id:g.dataset.u};drawGraph()});
+}
+
+/* ---------- 打包审批 (P4 M3, L4 审批同构) ---------- */
+let pkgCache=[],pkgAgg=[],pkgFilter='pending',pkgMsg='';
+const PKG_ST={pending:'待审批',approved:'已通过',rejected:'已驳回'};
+async function viewPkg(){
+  const q=await getApiRaw('pkg-approval/queue');
+  pkgCache=q.items||[];
+  try{const a=await getApiRaw('admin/packages');pkgAgg=a.items||[]}catch(e){pkgAgg=[]}
+  drawPkg();
+}
+function pkgDocsOf(x){try{return JSON.parse(x.doc_ids||'[]')}catch(e){return []}}
+function drawPkg(){
+  const cnt=s=>pkgCache.filter(x=>x.status===s).length;
+  const rows=pkgCache.filter(x=>pkgFilter==='all'||x.status===pkgFilter);
+  const seg=['pending','all'].map(s=>
+    `<button data-s="${s}" class="${pkgFilter===s?'on':''}">${s==='pending'?'待审批 ('+cnt('pending')+')':'全部子单 ('+pkgCache.length+')'}</button>`).join('');
+  const tr=rows.map(x=>{
+    const docs=pkgDocsOf(x);
+    const st=x.status==='pending'?'<span class="tag lv-L2">待审批</span>'
+      :x.status==='approved'?'<span class="st-ok">已通过</span>':'<span class="st-bad">已驳回</span>';
+    const mine=ME&&ME.userid===x.approver;
+    const canAct=mine||ME&&(ME.admin||ME.boss);
+    let op='';
+    if(x.status==='pending'&&canAct){
+      op=`<button class="btn" data-act="pkgprev" data-id="${x.id}">查看清单</button> `
+        +`<button class="btn" data-act="pkgok" data-id="${x.id}">批准</button> `
+        +`<button class="btn" data-act="pkgno" data-id="${x.id}">驳回</button>`;
+    }else if(x.status==='pending'){
+      op=`<span class="muted">审批人 ${esc(x.approver_name||uid6(x.approver))} 处理中</span>`;
+    }else{
+      op=`<span class="muted">${fmtTime(x.decided_at)}${x.decision_reason?' · '+esc(x.decision_reason):''}</span>`;
+    }
+    return `<tr><td class="src" title="${esc(x.package_title)}">${esc(x.package_title||x.package_id)}</td>`
+      +`<td>${esc(x.dept_name)}</td><td>${esc(x.creator_name||uid6(x.creator||''))}</td>`
+      +`<td>${docs.length} 篇</td><td>${esc(x.approver_name||uid6(x.approver))}</td>`
+      +`<td class="muted">${fmtTime(x.created_at)}</td><td>${st}</td><td>${op}</td></tr>`;
+  }).join('');
+  // 跨部门包聚合视图: 哪个包卡在哪张单
+  const aggRows=pkgAgg.slice(0,30).map(p=>{
+    const subs=pkgCache.filter(s=>s.package_id===p.package_id);
+    const pend=subs.filter(s=>s.status==='pending').map(s=>s.dept_name);
+    const ST={pending_approval:'审批中',approved:'已定稿',rejected:'全驳回',cancelled:'已撤回'};
+    const link=p.status==='approved'&&p.package_id?`<a href="/p/${''}" onclick="return false" class="muted">受控链接(仅本人)</a>`:'';
+    return `<tr><td class="src">${esc(p.title)}</td><td>${esc(p.creator_name||uid6(p.creator))}</td>`
+      +`<td>${(p.doc_ids?JSON.parse(p.doc_ids).length:p.doc_count||0)} 篇</td>`
+      +`<td>${ST[p.status]||esc(p.status)}</td>`
+      +`<td>${p.status==='pending_approval'&&pend.length?'<span class="st-bad">卡在: '+esc(pend.join('、'))+'</span>':'<span class="muted">—</span>'}</td>`
+      +`<td>${p.view_count!=null?p.view_count+' 次':'—'}</td><td>${link}</td></tr>`;
+  }).join('');
+  render(`
+  <div>${pkgMsg?'<div class="toast">'+esc(pkgMsg)+'</div>':''}</div>
+  <div class="card">
+    <div class="bar">
+      <div class="seg" id="pkgseg">${seg}</div>
+      <span class="muted">${ME&&ME.admin?'管理员视野(全部子单)':'仅指派给我的子单'} · 点击批准后该部门文档进入受控链接</span>
+    </div>
+    <table><thead><tr><th>包名</th><th>部门</th><th>发起人</th><th>文档数</th><th>审批人</th><th>提交时间</th><th>状态</th><th>操作</th></tr></thead>
+    <tbody>${tr||'<tr><td colspan="8" class="empty">没有待审批的打包子单</td></tr>'}</tbody></table>
+  </div>
+  <div class="card">
+    <div class="bar"><b>包聚合视图</b><span class="muted">最近 ${Math.min(pkgAgg.length,30)} 个包 · 哪个包卡在哪张单 / 点开次数</span></div>
+    <table><thead><tr><th>包名</th><th>发起人</th><th>文档</th><th>状态</th><th>卡点</th><th>点开</th><th>链接</th></tr></thead>
+    <tbody>${aggRows||'<tr><td colspan="7" class="empty">暂无打包记录</td></tr>'}</tbody></table>
+  </div>`);
+  document.getElementById('pkgseg').onclick=e=>{
+    const b=e.target.closest('button');if(b){pkgFilter=b.dataset.s;drawPkg()}
+  };
+  document.querySelector('main table tbody').onclick=async e=>{
+    const b=e.target.closest('button[data-act]');if(!b)return;
+    const id=b.dataset.id,act=b.dataset.act;
+    b.disabled=true;
+    try{
+      if(act==='pkgprev'){
+        const x=pkgCache.find(v=>String(v.id)===String(id));
+        showPkgPop(x);
+      }else if(act==='pkgok'){
+        if(!confirm('确认批准？批准后该部门文档将进入发起人的受控链接（7 天有效）。'))return;
+        const r=await postApi('pkg-approval/'+id+'/approve');
+        pkgMsg=r&&r.package_status==='approved'?'已批准，包已定稿，链接已生成并钉钉通知发起人':'已批准';
+        await viewPkg();
+      }else if(act==='pkgno'){
+        const reason=prompt('驳回理由（必填，将钉钉通知发起人）：');
+        if(reason==null)return;
+        if(!reason.trim()){alert('驳回理由不能为空');return}
+        const r=await postApi('pkg-approval/'+id+'/reject',{reason:reason.trim()});
+        pkgMsg=r&&r.package_status==='rejected'?'已驳回，包内文档全部被拒，已通知发起人':'已驳回，其余子单继续审批';
+        await viewPkg();
+      }
+    }catch(err){pkgMsg='操作失败: '+(err.message||err);drawPkg()}
+  };
+}
+async function showPkgPop(x){
+  if(!x)return;
+  const pop=document.getElementById('l4pop');
+  const docs=pkgDocsOf(x);
+  pop.innerHTML=`<h3>${esc(x.package_title||'子单')} · ${esc(x.dept_name)} <button class="btn" id="l4popx">关闭</button></h3>
+  <div class="muted" style="margin-bottom:8px">需求：${esc(x.need_text||'—').slice(0,200)}</div>
+  <div style="margin-bottom:8px"><b>${docs.length} 篇文档</b>（点标题预览正文，预览会记审计）</div>
+  <div id="pkgdoclist">${docs.map(d=>`<div style="margin:4px 0"><button class="btn" data-doc="${esc(d)}">预览</button> <code>${esc(d)}</code></div>`).join('')}</div>`;
+  pop.style.display='block';
+  document.getElementById('l4popx').onclick=()=>{pop.style.display='none'};
+  document.getElementById('pkgdoclist').onclick=async e=>{
+    const b=e.target.closest('button[data-doc]');if(!b)return;
+    const did=b.dataset.doc;
+    const box=document.createElement('div');box.className='muted';box.textContent='加载中…';
+    b.parentElement.appendChild(box);
+    try{
+      const p=await getApiRaw('pkg-approval/'+x.id+'/preview/'+did);
+      box.outerHTML=`<pre style="max-height:220px;overflow:auto;white-space:pre-wrap">${esc(p.preview||'（无正文）')}</pre>`;
+    }catch(err){box.textContent='预览失败: '+(err.message||err)}
+  };
+}
+
+/* ---------- 路由 ---------- */
+const views={overview:viewOverview,docs:viewDocs,members:viewMembers,sync:viewSync,l4:viewL4,review:viewReview,audit:viewAudit,hits:viewHits,report:viewReport,batch:viewBatch,graph:viewGraph,pkg:viewPkg};
+async function go(t){
+  tab=t;
+  const pop=document.getElementById('l4pop');if(pop)pop.style.display='none';
+  const rpop=document.getElementById('revpop');if(rpop)rpop.style.display='none';
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));
+  render('<div class="empty">加载中…</div>');
+  try{await views[t]()}catch(e){errbox(e)}
+}
+document.getElementById('nav').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(b)go(b.dataset.tab);
+});
+async function init(){
+  if(!TOKEN){document.getElementById('who').innerHTML='<span class="st-bad">未登录</span>';
+    render('<div class="err">未检测到登录凭证。请先打开 <a href="/">问答页</a> 完成钉钉扫码登录，再回到本页。</div>');return}
+  try{
+    const me=await (await fetch('/api/auth/me?token='+encodeURIComponent(TOKEN))).json();
+    if(me&&me.userid)ME=me;
+    document.getElementById('who').innerHTML=`${esc(me.name)} <b>${me.admin||me.boss?'· 管理员':'· 无管理权限'}</b>`;
+  }catch(e){document.getElementById('who').textContent='身份获取失败'}
+  go('overview');
+}
+init();
+})();
+</script>
+</body>
+</html>
